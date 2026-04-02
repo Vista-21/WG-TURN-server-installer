@@ -9,7 +9,7 @@
 - MTU = 1280
 - PersistentKeepalive = 0
 - Автоматическое создание трёх клиентов:
-  - `ealme_test`
+  - `main_test`
   - `user_test#1`
   - `user_test#2`
 - Удобные команды:
