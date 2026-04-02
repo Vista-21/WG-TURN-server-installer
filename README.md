@@ -27,6 +27,7 @@ curl -s https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main/install
 ```
 
 После установки:
+
 клиентские конфиги: `~/wg-clients/`
 
 серверный конфиг: `/etc/wireguard/wg0.conf`
