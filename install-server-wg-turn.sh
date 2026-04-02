@@ -27,8 +27,8 @@ cat << "EOF"
    \ V  V / | | | | |  | |__| (_) | | | \ V /  __/ |  | |
     \_/\_/  |_|_| |_|   \____\___/|_| |_|\_/ \___|_|  |_|
 
-        W I R E G U A R D   I N S T A L L E R
-        --------------------------------------
+     W I R E G U A R D  +  V K   T U R N   S E R V E R
+     --------------------------------------------------
               Automated setup & management
 EOF
 echo
@@ -109,14 +109,14 @@ EOF
     ok "Debian repositories fixed"
 fi
 
-REPO="https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main"
+REPO="https://raw.githubusercontent.com/Vista-21/WG-TURN-server-installer/main"
 
 ###############################################
 # УСТАНОВКА WIREGUARD
 ###############################################
 info "Installing WireGuard..."
 apt update
-apt install -y wireguard iptables curl wget qrencode
+apt install -y wireguard iptables curl wget qrencode whiptail
 ok "WireGuard installed"
 
 mkdir -p /etc/wireguard
@@ -241,6 +241,79 @@ chmod +x /usr/local/bin/vk-turn-clean
 ok "vk-turn-clean created"
 
 ###############################################
+# СОЗДАНИЕ TUI wg-menu
+###############################################
+cat > /usr/local/bin/wg-menu <<'EOF'
+#!/bin/bash
+
+menu() {
+    whiptail --title "WireGuard Management" --menu "Выберите действие:" 20 60 10 \
+    "1" "Добавить клиента" \
+    "2" "Удалить клиента" \
+    "3" "Показать список клиентов" \
+    "4" "Показать QR клиента" \
+    "5" "Перезапустить WireGuard" \
+    "6" "Статус сервисов" \
+    "7" "Удалить vk-turn-proxy" \
+    "8" "Выход" 3>&1 1>&2 2>&3
+}
+
+while true; do
+    CHOICE=$(menu)
+
+    case $CHOICE in
+        1)
+            NAME=$(whiptail --inputbox "Введите имя клиента:" 10 60 3>&1 1>&2 2>&3)
+            [ -n "$NAME" ] && wg-add-client "$NAME" && whiptail --msgbox "Клиент $NAME создан." 10 60
+            ;;
+
+        2)
+            NAME=$(whiptail --inputbox "Введите имя клиента для удаления:" 10 60 3>&1 1>&2 2>&3)
+            [ -n "$NAME" ] && wg-del-client "$NAME" && whiptail --msgbox "Клиент $NAME удалён." 10 60
+            ;;
+
+        3)
+            LIST=$(wg-peers)
+            whiptail --msgbox "$LIST" 25 80
+            ;;
+
+        4)
+            NAME=$(whiptail --inputbox "Введите имя клиента для QR:" 10 60 3>&1 1>&2 2>&3)
+            CONF=~/wg-clients/$NAME.conf
+            if [ -f "$CONF" ]; then
+                qrencode -t ANSIUTF8 < "$CONF" | whiptail --title "QR $NAME" --msgbox "$(cat)" 30 80
+            else
+                whiptail --msgbox "Файл $CONF не найден." 10 60
+            fi
+            ;;
+
+        5)
+            systemctl restart wg-quick@wg0
+            whiptail --msgbox "WireGuard перезапущен." 10 60
+            ;;
+
+        6)
+            STATUS=$(systemctl status wg-quick@wg0 --no-pager)
+            STATUS2=$(systemctl status vk-turn-proxy --no-pager 2>/dev/null || echo "vk-turn-proxy не установлен")
+            whiptail --msgbox "$STATUS\n\n$STATUS2" 30 90
+            ;;
+
+        7)
+            vk-turn-clean
+            whiptail --msgbox "vk-turn-proxy удалён." 10 60
+            ;;
+
+        8)
+            exit 0
+            ;;
+    esac
+done
+EOF
+
+chmod +x /usr/local/bin/wg-menu
+ok "wg-menu created"
+
+###############################################
 # QR-КОД ДЛЯ ПЕРВОГО КЛИЕНТА
 ###############################################
 info "Generating QR for main_test..."
@@ -250,7 +323,7 @@ qrencode -t ANSIUTF8 < ~/wg-clients/main_test.conf
 # ФИНАЛ
 ###############################################
 echo
-ok "WireGuard installation complete"
+ok "WireGuard + VK TURN installation complete"
 info "Clients stored in: ~/wg-clients/"
-info "Commands: wg-add-client, wg-del-client, wg-peers, wg-clean, vk-turn-clean"
+info "Commands: wg-add-client, wg-del-client, wg-peers, wg-clean, vk-turn-clean, wg-menu"
 echo
