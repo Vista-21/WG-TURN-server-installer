@@ -20,8 +20,6 @@
 
 ## Установка
 
-На чистом сервере Debian/Ubuntu:
-
 ```bash
 curl -s https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main/install-wg.sh | bash
 ```
