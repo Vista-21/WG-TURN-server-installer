@@ -2,6 +2,22 @@
 
 set -e
 
+# --- ASCII Banner ---
+clear
+cat << "EOF"
+ __        ___           ____                          _ 
+ \ \      / (_)_ __     / ___|___  _ ____   _____ _ __| |
+  \ \ /\ / /| | '_ \   | |   / _ \| '_ \ \ / / _ \ '__| |
+   \ V  V / | | | | |  | |__| (_) | | | \ V /  __/ |  | |
+    \_/\_/  |_|_| |_|   \____\___/|_| |_|\_/ \___|_|  |_|
+
+        W I R E G U A R D   I N S T A L L E R
+        --------------------------------------
+              Automated setup & management
+EOF
+echo
+sleep 1
+
 echo "Checking OS version..."
 OS_ID=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 OS_VER=$(grep -oP '(?<=VERSION_ID=").+(?=")' /etc/os-release)
