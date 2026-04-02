@@ -59,6 +59,18 @@ fi
 
 REPO="https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main"
 
+echo
+read -p "Введите порт для WireGuard (по умолчанию 37821): " SERVER_PORT
+SERVER_PORT=${SERVER_PORT:-37821}
+
+if ! [[ "$SERVER_PORT" =~ ^[0-9]+$ ]] || [ "$SERVER_PORT" -lt 1 ] || [ "$SERVER_PORT" -gt 65535 ]; then
+    echo "Некорректный порт. Использую 37821."
+    SERVER_PORT=37821
+fi
+
+echo "WireGuard port set to: $SERVER_PORT"
+echo
+
 echo "Updating system..."
 apt update
 
@@ -68,7 +80,7 @@ if ! command -v nano >/dev/null 2>&1; then
 fi
 
 echo "Installing WireGuard..."
-apt install -y wireguard iptables curl
+apt install -y wireguard iptables curl wget
 
 mkdir -p /etc/wireguard
 mkdir -p ~/wg-clients
@@ -87,7 +99,6 @@ wg genkey | tee /etc/wireguard/server_private.key | wg pubkey > /etc/wireguard/s
 SERVER_PRIV=$(cat /etc/wireguard/server_private.key)
 SERVER_PUB=$(cat /etc/wireguard/server_public.key)
 
-SERVER_PORT=37821
 SERVER_IP="10.8.0.1/24"
 MTU=1280
 IFACE=$(ip route get 1.1.1.1 | awk '{print $5; exit}')
@@ -112,6 +123,62 @@ chmod 600 /etc/wireguard/wg0.conf
 systemctl enable wg-quick@wg0
 systemctl restart wg-quick@wg0
 
+###############################################
+# УСТАНОВКА VK TURN PROXY
+###############################################
+
+echo "Installing VK TURN Proxy..."
+
+WG_PORT=$(grep -oP '(?<=ListenPort = )\d+' /etc/wireguard/wg0.conf)
+echo "Detected WireGuard port: $WG_PORT"
+
+mkdir -p /opt/vk-turn-proxy
+cd /opt/vk-turn-proxy
+
+wget -q https://github.com/kiper292/vk-turn-proxy/releases/download/v2.0.2/server-linux-amd64 -O server
+chmod +x server
+
+cat > /etc/systemd/system/vk-turn-proxy.service <<EOF
+[Unit]
+Description=VK TURN Proxy
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/vk-turn-proxy
+ExecStart=/opt/vk-turn-proxy/server -listen 0.0.0.0:56000 -connect 127.0.0.1:$WG_PORT
+Restart=always
+RestartSec=3
+User=root
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable vk-turn-proxy
+systemctl start vk-turn-proxy
+
+echo "VK TURN Proxy installed and running."
+
+###############################################
+# СОЗДАЁМ vk-turn-clean
+###############################################
+
+cat > /usr/local/bin/vk-turn-clean <<EOF
+#!/bin/bash
+systemctl stop vk-turn-proxy 2>/dev/null
+systemctl disable vk-turn-proxy 2>/dev/null
+rm -f /etc/systemd/system/vk-turn-proxy.service
+rm -rf /opt/vk-turn-proxy
+systemctl daemon-reload
+echo "VK TURN Proxy fully removed."
+EOF
+
+chmod +x /usr/local/bin/vk-turn-clean
+
+echo
 echo "WireGuard installation complete."
 echo "Clients are in: ~/wg-clients/"
-echo "Commands: wg-add-client, wg-del-client, wg-peers, wg-clean"
+echo "Commands: wg-add-client, wg-del-client, wg-peers, wg-clean, vk-turn-clean"
