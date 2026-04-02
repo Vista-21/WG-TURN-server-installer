@@ -40,7 +40,10 @@ if [ -t 0 ]; then
     fi
 else
     echo
-    echo "stdin недоступен — использую порт по умолчанию $DEFAULT_PORT"
+    echo "Вы запустили установку через pipe, поэтому порт будет выбран автоматически."
+    echo "Для интерактивного режима используйте:"
+    echo "bash <(curl -s https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main/install-wg.sh)"
+    echo
     SERVER_PORT=$DEFAULT_PORT
 fi
 
@@ -94,7 +97,7 @@ if ! command -v nano >/dev/null 2>&1; then
 fi
 
 echo "Installing WireGuard..."
-apt install -y wireguard iptables curl wget
+apt install -y wireguard iptables curl wget qrencode
 
 mkdir -p /etc/wireguard
 mkdir -p ~/wg-clients
@@ -190,7 +193,15 @@ EOF
 
 chmod +x /usr/local/bin/vk-turn-clean
 
+###############################################
+# ГЕНЕРАЦИЯ QR-КОДА ДЛЯ ПЕРВОГО КЛИЕНТА
+###############################################
+echo
+echo "Generating QR for main_test..."
+qrencode -t ANSIUTF8 < ~/wg-clients/main_test.conf
+
 echo
 echo "WireGuard installation complete."
 echo "Clients are in: ~/wg-clients/"
 echo "Commands: wg-add-client, wg-del-client, wg-peers, wg-clean, vk-turn-clean"
+echo "QR for main_test shown above."
