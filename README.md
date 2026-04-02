@@ -30,22 +30,19 @@ curl -s https://raw.githubusercontent.com/Vista-21/WIREGUARD_instal/main/install
 клиентские конфиги: ~/wg-clients/
 серверный конфиг: /etc/wireguard/wg0.conf
 
-После этого у тебя будут доступны команды:
-wg-add-client
-wg-del-client
-wg-peers
-wg-clean
-
 Примеры использования:
 
  - добавить клиента
-wg-add-client my_client
+`wg-add-client my_client`
+
  - удалить клиента
-wg-del-client my_client
+`wg-del-client my_client`
+
  - показать состояние
-wg-peers
+`wg-peers`
+
  - полностью удалить WireGuard
-wg-clean
+`wg-clean`
 
 
 
