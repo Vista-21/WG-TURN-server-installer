@@ -112,6 +112,17 @@ apt update
 apt install -y wireguard iptables curl wget qrencode whiptail
 ok "WireGuard installed"
 
+###############################################
+# УСТАНОВКА NANO (если отсутствует)
+###############################################
+if ! command -v nano >/dev/null 2>&1; then
+    info "Installing nano..."
+    apt install -y nano
+    ok "nano installed"
+else
+    ok "nano already installed"
+fi
+
 mkdir -p /etc/wireguard
 mkdir -p ~/wg-clients
 
