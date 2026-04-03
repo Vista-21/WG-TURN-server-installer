@@ -43,16 +43,18 @@ OS_CODENAME=$(grep -oP '(?<=VERSION_CODENAME=).+' /etc/os-release)
 info "Detected: $OS_ID ($OS_CODENAME)"
 
 ###############################################
-# ЗАПРОС ПОРТА (С ЗАЩИТОЙ)
+# ЗАПРОС ПОРТА (УСТОЙЧИВАЯ ВЕРСИЯ)
 ###############################################
 DEFAULT_PORT=37821
 
 get_free_port() {
     local PORT
+    local ATTEMPTS=0
+    local MAX_ATTEMPTS=3
 
     while true; do
         # Попытка интерактивного ввода с таймаутом
-        if read -t 1 -p "Введите порт для WireGuard (по умолчанию $DEFAULT_PORT): " PORT; then
+        if read -t 5 -p "Введите порт для WireGuard (по умолчанию $DEFAULT_PORT): " PORT; then
             PORT=${PORT:-$DEFAULT_PORT}
         else
             warn "stdin не отвечает — выбран порт по умолчанию"
@@ -62,6 +64,12 @@ get_free_port() {
         # Проверка числа
         if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
             error "Порт должен быть числом"
+            ((ATTEMPTS++))
+            if ((ATTEMPTS >= MAX_ATTEMPTS)); then
+                warn "Слишком много неверных попыток — выбран порт по умолчанию"
+                PORT=$DEFAULT_PORT
+                break
+            fi
             continue
         fi
 
@@ -69,12 +77,19 @@ get_free_port() {
         if ss -tuln | grep -q ":$PORT "; then
             PROC=$(ss -tulnp | grep ":$PORT " | awk -F '"' '{print $2}')
             error "Порт $PORT уже используется процессом: $PROC"
+            ((ATTEMPTS++))
+            if ((ATTEMPTS >= MAX_ATTEMPTS)); then
+                warn "Порт занят — выбран порт по умолчанию"
+                PORT=$DEFAULT_PORT
+                break
+            fi
             continue
         fi
 
-        echo "$PORT"
-        return
+        break
     done
+
+    echo "$PORT"
 }
 
 SERVER_PORT=$(get_free_port)
