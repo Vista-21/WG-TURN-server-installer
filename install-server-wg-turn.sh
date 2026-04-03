@@ -106,6 +106,9 @@ EOF
     ok "Debian repositories fixed"
 fi
 
+###############################################
+# URL РЕПОЗИТОРИЯ (ВАЖНО!)
+###############################################
 REPO="https://raw.githubusercontent.com/Vista-21/WG-TURN-server-installer/main"
 
 ###############################################
@@ -135,5 +138,4 @@ mkdir -p ~/wg-clients
 info "Downloading management scripts..."
 curl -s -o /usr/local/bin/wg-add-client $REPO/wg-add-client.sh
 curl -s -o /usr/local/bin/wg-del-client $REPO/wg-del-client.sh
-curl -s -o /usr/local/bin/wg-peers      $REPO/wg-peers.sh
-curl -s -o /usr/local/bin/wg-clean
+curl -s -o /usr/local
